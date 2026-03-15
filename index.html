@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flowmerq — Shop. Watch. Buy.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Cloudflare Turnstile -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080808;--bg2:#111;--bg3:#1a1a1a;--bg4:#222;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --accent:#e8ff47;--accent-hover:#d4eb2a;
+  --red:#ff3c5f;--red-hover:#e0223f;
+  --purple:#a78bfa;--purple-dark:#7c3aed;
+  --green:#34d399;
+  --text:#f0f0f0;--muted:#777;--muted2:#aaa;--muted3:#ccc;
+  --ff-display:'Bebas Neue',sans-serif;
+  --ff-body:'DM Sans',sans-serif;
+  --ff-mono:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--ff-body);overflow-x:hidden}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:2px}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:90;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;height:58px;
+  background:rgba(8,8,8,0.93);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{font-family:var(--ff-display);font-size:1.75rem;color:var(--accent);cursor:pointer;letter-spacing:.04em}
+.nav-links{display:flex;align-items:center;gap:2rem}
+.nav-link{font-size:.75rem;font-weight:500;color:var(--muted2);text-transform:uppercase;letter-spacing:.12em;cursor:pointer;transition:color .2s}
+.nav-link:hover{color:var(--text)}
+.nav-right{display:flex;align-items:center;gap:.75rem}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--muted2);padding:.42rem 1rem;border-radius:4px;font-size:.75rem;font-weight:500;font-family:var(--ff-body);cursor:pointer;transition:all .2s;letter-spacing:.04em}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-accent{background:var(--accent);color:#080808;padding:.42rem 1.1rem;border-radius:4px;font-size:.75rem;font-weight:700;font-family:var(--ff-body);cursor:pointer;border:none;transition:all .2s;letter-spacing:.04em}
+.btn-accent:hover{background:var(--accent-hover);transform:translateY(-1px)}
+.cart-btn{position:relative;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.42rem .9rem;border-radius:4px;cursor:pointer;font-size:.82rem;display:flex;align-items:center;gap:5px;transition:border-color .2s;font-family:var(--ff-body)}
+.cart-btn:hover{border-color:var(--border2)}
+.cart-count{background:var(--red);color:#fff;font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:10px;font-family:var(--ff-mono);min-width:17px;text-align:center}
+
+/* ── TICKER ── */
+.ticker{background:var(--accent);overflow:hidden;height:34px;display:flex;align-items:center;margin-top:58px}
+.ticker-track{display:flex;animation:ticker 24s linear infinite;white-space:nowrap}
+.ticker-item{font-family:var(--ff-display);font-size:.9rem;color:#080808;letter-spacing:.06em;padding:0 2rem}
+.ticker-sep{color:rgba(8,8,8,.35);padding:0 .25rem}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;display:flex;align-items:center;
+  padding:0 2rem;position:relative;overflow:hidden;
+}
+.hero-bg-grid{
+  position:absolute;inset:0;z-index:0;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);
+  opacity:.5;
+}
+.hero-glow-a{position:absolute;top:-100px;right:-80px;width:700px;height:600px;background:radial-gradient(ellipse,rgba(232,255,71,.055) 0%,transparent 65%);pointer-events:none;z-index:0}
+.hero-glow-b{position:absolute;bottom:-60px;left:-40px;width:500px;height:400px;background:radial-gradient(ellipse,rgba(255,60,95,.045) 0%,transparent 65%);pointer-events:none;z-index:0}
+.hero-content{position:relative;z-index:1;max-width:660px}
+.hero-eyebrow{font-family:var(--ff-mono);font-size:.68rem;color:var(--accent);letter-spacing:.2em;text-transform:uppercase;margin-bottom:1.1rem;display:flex;align-items:center;gap:10px;animation:fadeUp .5s ease both}
+.hero-eyebrow::before{content:'';width:28px;height:1.5px;background:var(--accent)}
+.hero-title{font-family:var(--ff-display);font-size:clamp(4.5rem,11vw,8.5rem);line-height:.9;letter-spacing:.01em;margin-bottom:1.4rem;animation:fadeUp .55s .08s ease both}
+.hero-title .hl{color:var(--accent)}
+.hero-sub{font-size:1rem;color:var(--muted2);line-height:1.75;max-width:430px;margin-bottom:2rem;font-weight:300;animation:fadeUp .55s .16s ease both}
+.hero-sub strong{color:var(--text);font-weight:500}
+.hero-ctas{display:flex;gap:.85rem;flex-wrap:wrap;margin-bottom:3rem;animation:fadeUp .55s .24s ease both}
+.btn-hero-primary{background:var(--accent);color:#080808;padding:.88rem 2.2rem;border-radius:4px;font-size:.88rem;font-weight:700;font-family:var(--ff-body);cursor:pointer;border:none;letter-spacing:.04em;transition:all .2s}
+.btn-hero-primary:hover{background:var(--accent-hover);transform:translateY(-2px);box-shadow:0 10px 30px rgba(232,255,71,.22)}
+.btn-hero-outline{background:transparent;border:1px solid var(--border2);color:var(--muted2);padding:.88rem 2rem;border-radius:4px;font-size:.88rem;font-weight:500;font-family:var(--ff-body);cursor:pointer;letter-spacing:.04em;transition:all .2s}
+.btn-hero-outline:hover{border-color:var(--text);color:var(--text)}
+.hero-stats{display:flex;gap:2.5rem;padding-top:2rem;border-top:1px solid var(--border);flex-wrap:wrap;animation:fadeUp .55s .32s ease both}
+.stat-val{font-family:var(--ff-display);font-size:2.2rem;color:var(--text);display:block;line-height:1}
+.stat-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+.hero-right{position:absolute;right:0;top:50%;transform:translateY(-50%);z-index:1;width:420px;display:flex;flex-direction:column;gap:2px;animation:fadeUp .6s .2s ease both}
+.hero-product-preview{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.9rem;display:flex;align-items:center;gap:12px;transition:border-color .2s}
+.hero-product-preview:hover{border-color:var(--border2)}
+.hpp-img{width:52px;height:52px;background:var(--bg3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0}
+.hpp-name{font-size:.85rem;font-weight:500;color:var(--text)}
+.hpp-meta{font-size:.72rem;color:var(--muted);margin-top:2px}
+.hpp-price{font-family:var(--ff-display);font-size:1.3rem;color:var(--accent);margin-left:auto;flex-shrink:0}
+
+/* ── SECTIONS ── */
+section{padding:5rem 2rem}
+.section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2.5rem;gap:1rem;flex-wrap:wrap}
+.section-eyebrow{font-family:var(--ff-mono);font-size:.65rem;color:var(--accent);letter-spacing:.18em;text-transform:uppercase;margin-bottom:.4rem}
+.section-title{font-family:var(--ff-display);font-size:clamp(2rem,4vw,3rem);letter-spacing:.02em;line-height:1}
+.see-all{font-size:.75rem;color:var(--muted2);text-transform:uppercase;letter-spacing:.1em;cursor:pointer;border-bottom:1px solid var(--border2);padding-bottom:2px;transition:all .2s;white-space:nowrap}
+.see-all:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ── WHY FLOWMERQ ── */
+.why-section{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;background:var(--border);border:1px solid var(--border)}
+.why-card{background:var(--bg2);padding:1.6rem 1.4rem;position:relative;overflow:hidden;transition:background .2s}
+.why-card:hover{background:var(--bg3)}
+.why-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2.5px}
+.why-card:nth-child(1)::before{background:var(--accent)}
+.why-card:nth-child(2)::before{background:var(--red)}
+.why-card:nth-child(3)::before{background:var(--purple)}
+.why-card:nth-child(4)::before{background:var(--green)}
+.why-icon{font-size:1.6rem;margin-bottom:1rem}
+.why-title{font-size:.95rem;font-weight:500;color:var(--text);margin-bottom:.5rem}
+.why-body{font-size:.82rem;color:var(--muted2);line-height:1.65;font-weight:300}
+.why-tag{font-family:var(--ff-mono);font-size:.62rem;margin-top:.75rem;padding:2px 8px;border-radius:20px;display:inline-block}
+.wt-a{background:rgba(232,255,71,.1);color:var(--accent)}
+.wt-r{background:rgba(255,60,95,.1);color:var(--red)}
+.wt-p{background:rgba(167,139,250,.1);color:var(--purple)}
+.wt-g{background:rgba(52,211,153,.1);color:var(--green)}
+
+/* ── CATEGORIES ── */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:1px;background:var(--border);border:1px solid var(--border)}
+.cat-card{background:var(--bg);padding:1.4rem 1rem;text-align:center;cursor:pointer;transition:background .2s;display:flex;flex-direction:column;align-items:center;gap:.45rem}
+.cat-card:hover{background:var(--bg3)}
+.cat-icon{font-size:1.9rem}
+.cat-name{font-size:.78rem;font-weight:500;color:var(--muted2);letter-spacing:.04em}
+.cat-count{font-family:var(--ff-mono);font-size:.6rem;color:var(--muted)}
+
+/* ── PRODUCT GRID ── */
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1px;background:var(--border);border:1px solid var(--border)}
+.pcard{background:var(--bg);cursor:pointer;transition:background .25s;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.pcard:hover{background:var(--bg2)}
+.pcard:hover .pcard-actions{opacity:1;transform:translateY(0)}
+.pcard:hover .pcard-img-inner{transform:scale(1.05)}
+.pcard-img{aspect-ratio:1;overflow:hidden;background:var(--bg3)}
+.pcard-img-inner{width:100%;height:100%;display:flex;align-items:center;justify-content:center;transition:transform .4s ease;font-size:3.8rem}
+.pcard-badge{position:absolute;top:11px;left:11px;font-family:var(--ff-mono);font-size:.6rem;font-weight:500;padding:3px 8px;border-radius:2px;text-transform:uppercase;letter-spacing:.08em;z-index:2}
+.badge-hot{background:var(--red);color:#fff}
+.badge-new{background:var(--accent);color:#080808}
+.badge-sale{background:var(--purple-dark);color:#fff}
+.pcard-body{padding:.95rem 1.1rem 1.1rem;flex:1;display:flex;flex-direction:column;gap:5px}
+.pcard-cat{font-family:var(--ff-mono);font-size:.6rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.pcard-name{font-size:.9rem;font-weight:500;color:var(--text);line-height:1.4}
+.pcard-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:7px}
+.pcard-price{font-family:var(--ff-display);font-size:1.4rem;color:var(--accent)}
+.pcard-price-old{font-size:.75rem;color:var(--muted);text-decoration:line-through;margin-left:5px;font-family:var(--ff-mono)}
+.pcard-rating{font-size:.7rem;color:var(--muted2);display:flex;align-items:center;gap:3px}
+.pcard-actions{position:absolute;bottom:0;left:0;right:0;padding:2rem 1rem 1rem;display:flex;gap:7px;opacity:0;transform:translateY(8px);transition:all .25s;z-index:3;background:linear-gradient(to top,rgba(8,8,8,.96) 0%,transparent)}
+.btn-add{flex:1;background:var(--accent);color:#080808;border:none;padding:.58rem;font-size:.78rem;font-weight:700;cursor:pointer;border-radius:3px;font-family:var(--ff-body);letter-spacing:.04em;transition:background .2s}
+.btn-add:hover{background:var(--accent-hover)}
+.btn-wish{background:var(--bg3);border:1px solid var(--border2);color:var(--muted2);padding:.58rem .7rem;cursor:pointer;border-radius:3px;font-size:.85rem;transition:all .2s}
+.btn-wish:hover{border-color:var(--red);color:var(--red)}
+
+/* ── VIDEO FEED ── */
+.video-section{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:2px;background:var(--border)}
+.vcard{background:var(--bg);aspect-ratio:9/16;position:relative;overflow:hidden;cursor:pointer}
+.vcard:hover .vcard-overlay{opacity:1}
+.vcard:hover .vcard-thumb{transform:scale(1.07)}
+.vcard-thumb{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3.2rem;background:var(--bg3);transition:transform .4s}
+.vcard-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;flex-direction:column;justify-content:flex-end;padding:.9rem;opacity:0;transition:opacity .25s}
+.vcard-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:42px;height:42px;background:rgba(232,255,71,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#080808;opacity:0;transition:opacity .25s}
+.vcard:hover .vcard-play{opacity:1}
+.vcard-seller{font-size:.7rem;color:var(--accent);font-family:var(--ff-mono);letter-spacing:.06em}
+.vcard-product{font-size:.82rem;color:var(--text);font-weight:500;margin:3px 0}
+.vcard-price{font-family:var(--ff-display);font-size:1.15rem;color:var(--accent)}
+.vcard-live{position:absolute;top:10px;left:10px;background:var(--red);color:#fff;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:2px;font-family:var(--ff-mono);letter-spacing:.1em;animation:livePulse 2s infinite}
+@keyframes livePulse{0%,100%{opacity:1}50%{opacity:.7}}
+
+/* ── TIKTOK BANNER ── */
+.tiktok-banner{
+  background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:4rem 2rem;display:flex;align-items:center;gap:3rem;flex-wrap:wrap;
+  position:relative;overflow:hidden;
+}
+.tb-glow{position:absolute;right:-100px;top:50%;transform:translateY(-50%);width:500px;height:400px;background:radial-gradient(ellipse,rgba(255,60,95,.06) 0%,transparent 65%);pointer-events:none}
+.tb-content{flex:1;min-width:280px;position:relative;z-index:1}
+.tb-eyebrow{font-family:var(--ff-mono);font-size:.65rem;color:var(--red);letter-spacing:.16em;text-transform:uppercase;margin-bottom:.6rem}
+.tb-title{font-family:var(--ff-display);font-size:clamp(2rem,4vw,3.2rem);line-height:1.05;margin-bottom:.8rem}
+.tb-title span{color:var(--red)}
+.tb-body{font-size:.9rem;color:var(--muted2);line-height:1.7;font-weight:300;max-width:460px;margin-bottom:1.5rem}
+.pain-pills{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:1.5rem}
+.pain-pill{font-size:.75rem;padding:.35rem .85rem;border-radius:20px;border:1px solid rgba(255,60,95,.25);background:rgba(255,60,95,.07);color:var(--red);font-family:var(--ff-mono);letter-spacing:.06em}
+.tb-ctas{display:flex;gap:.85rem;flex-wrap:wrap}
+.btn-red{background:var(--red);color:#fff;padding:.78rem 1.8rem;border-radius:4px;font-size:.85rem;font-weight:700;font-family:var(--ff-body);cursor:pointer;border:none;letter-spacing:.04em;transition:all .2s}
+.btn-red:hover{background:var(--red-hover);transform:translateY(-1px)}
+.tb-stats{display:flex;flex-direction:column;gap:.75rem;flex-shrink:0;position:relative;z-index:1}
+.tb-stat{background:var(--bg2);border:1px solid var(--border);padding:.9rem 1.2rem;border-radius:6px;text-align:center;min-width:140px}
+.tb-stat-val{font-family:var(--ff-display);font-size:1.8rem;color:var(--red);display:block}
+.tb-stat-label{font-size:.7rem;color:var(--muted);font-family:var(--ff-mono);letter-spacing:.08em;text-transform:uppercase}
+
+/* ── SELLER BANNER ── */
+.seller-banner{
+  background:var(--bg3);border:1px solid var(--border);margin:0 2rem 4rem;
+  padding:3rem 2.5rem;display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap;
+  position:relative;overflow:hidden;border-radius:6px;
+}
+.seller-banner::before{content:'SELL';position:absolute;right:-1rem;top:50%;transform:translateY(-50%);font-family:var(--ff-display);font-size:10rem;color:rgba(255,255,255,.018);pointer-events:none}
+.sb-eyebrow{font-family:var(--ff-mono);font-size:.65rem;color:var(--accent);letter-spacing:.16em;text-transform:uppercase;margin-bottom:.5rem}
+.sb-title{font-family:var(--ff-display);font-size:clamp(1.8rem,3vw,2.8rem);line-height:1.1}
+.sb-title span{color:var(--accent)}
+.sb-sub{font-size:.88rem;color:var(--muted2);margin-top:.5rem;max-width:380px;line-height:1.65;font-weight:300}
+.sb-ctas{display:flex;gap:.85rem;flex-wrap:wrap}
+
+/* ── SOCIAL PROOF ── */
+.proof-section{padding:4rem 2rem;background:var(--bg2);border-top:1px solid var(--border)}
+.proof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);max-width:800px;margin:2rem auto 0}
+.proof-item{background:var(--bg2);padding:1.4rem 1rem;text-align:center}
+.proof-val{font-family:var(--ff-display);font-size:2rem;display:block;margin-bottom:4px}
+.proof-desc{font-size:.7rem;color:var(--muted);font-family:var(--ff-mono);text-transform:uppercase;letter-spacing:.08em}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--border);padding:2.5rem 2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-logo{font-family:var(--ff-display);font-size:1.5rem;color:var(--accent)}
+.footer-links{display:flex;gap:2rem;flex-wrap:wrap}
+.footer-link{font-size:.72rem;color:var(--muted);cursor:pointer;transition:color .2s;letter-spacing:.04em}
+.footer-link:hover{color:var(--muted2)}
+.footer-copy{font-size:.68rem;color:var(--muted);font-family:var(--ff-mono)}
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;
+  display:flex;align-items:center;justify-content:center;padding:1rem;
+  opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(6px);
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-overlay.open .modal-box{transform:translateY(0) scale(1)}
+
+/* ── SIGNUP MODAL ── */
+.signup-modal{width:100%;max-width:520px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;overflow:hidden;transform:translateY(20px) scale(.97);transition:transform .28s cubic-bezier(.34,1.56,.64,1)}
+.sm-header{padding:1.6rem 1.6rem 0}
+.sm-close{float:right;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.3rem;line-height:1;transition:color .2s;margin-top:-4px}
+.sm-close:hover{color:var(--text)}
+.sm-eyebrow{font-family:var(--ff-mono);font-size:.65rem;color:var(--accent);letter-spacing:.16em;text-transform:uppercase;margin-bottom:.4rem}
+.sm-title{font-family:var(--ff-display);font-size:2rem;letter-spacing:.03em;line-height:1.05}
+.sm-sub{font-size:.83rem;color:var(--muted2);margin-top:.35rem;line-height:1.6;font-weight:300}
+
+/* Role tabs */
+.role-tabs{display:flex;gap:0;margin:1.2rem 0 0;border-bottom:1px solid var(--border)}
+.rtab{flex:1;background:none;border:none;color:var(--muted2);padding:.55rem .5rem .75rem;cursor:pointer;font-size:.78rem;font-weight:500;font-family:var(--ff-body);letter-spacing:.04em;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .18s}
+.rtab.active-merchant{color:var(--accent);border-bottom-color:var(--accent)}
+.rtab.active-creator{color:var(--red);border-bottom-color:var(--red)}
+.rtab.active-buyer{color:var(--purple);border-bottom-color:var(--purple)}
+
+/* Form body */
+.sm-body{padding:1.2rem 1.6rem 1.6rem;max-height:68vh;overflow-y:auto}
+.sm-body::-webkit-scrollbar{width:3px}
+.sm-body::-webkit-scrollbar-thumb{background:var(--bg4)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-row.single{grid-template-columns:1fr}
+.fgroup{margin-bottom:.85rem}
+.flabel{font-family:var(--ff-mono);font-size:.6rem;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;display:block}
+.finput,.fselect{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.62rem .82rem;color:var(--text);font-size:.86rem;font-family:var(--ff-body);outline:none;transition:border-color .18s,box-shadow .18s;appearance:none}
+.finput::placeholder{color:var(--muted)}
+.finput:focus,.fselect:focus{border-color:var(--focus-color,var(--accent));box-shadow:0 0 0 2px var(--focus-glow,rgba(232,255,71,.08))}
+.form-merchant .finput:focus,.form-merchant .fselect:focus{--focus-color:var(--accent);--focus-glow:rgba(232,255,71,.08)}
+.form-creator .finput:focus,.form-creator .fselect:focus{--focus-color:var(--red);--focus-glow:rgba(255,60,95,.08)}
+.form-buyer .finput:focus,.form-buyer .fselect:focus{--focus-color:var(--purple);--focus-glow:rgba(167,139,250,.08)}
+.fselect option{background:var(--bg3)}
+.ch-label{font-family:var(--ff-mono);font-size:.6rem;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px;display:block}
+.ch-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.85rem}
+.ch-pill{padding:.32rem .78rem;border-radius:20px;font-size:.75rem;font-weight:500;font-family:var(--ff-body);cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--muted2);transition:all .16s;user-select:none}
+.ch-on-merchant{background:var(--accent);color:#080808;border-color:var(--accent)}
+.ch-on-creator{background:var(--red);color:#fff;border-color:var(--red)}
+.ch-on-buyer{background:var(--purple);color:#fff;border-color:var(--purple)}
+.consent-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:1rem}
+.cbox{width:17px;height:17px;border-radius:3px;border:1px solid var(--border2);background:var(--bg3);cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .16s}
+.cbox.on-merchant{background:var(--accent);border-color:var(--accent)}
+.cbox.on-creator{background:var(--red);border-color:var(--red)}
+.cbox.on-buyer{background:var(--purple);border-color:var(--purple)}
+.cbox svg{display:none}
+.cbox.on-merchant svg,.cbox.on-creator svg,.cbox.on-buyer svg{display:block}
+.consent-text{font-size:.73rem;color:var(--muted);line-height:1.55}
+.btn-submit{width:100%;padding:.85rem;border:none;border-radius:5px;font-size:.88rem;font-weight:700;font-family:var(--ff-body);cursor:pointer;letter-spacing:.04em;transition:all .2s;margin-top:.25rem}
+.sub-merchant{background:var(--accent);color:#080808}
+.sub-merchant:hover{background:var(--accent-hover);transform:translateY(-1px)}
+.sub-creator{background:var(--red);color:#fff}
+.sub-creator:hover{background:var(--red-hover);transform:translateY(-1px)}
+.sub-buyer{background:var(--purple);color:#fff}
+.sub-buyer:hover{background:#8b5cf6;transform:translateY(-1px)}
+
+/* success */
+.sm-success{display:none;padding:2.5rem 1.6rem;text-align:center}
+.ss-icon{width:56px;height:56px;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+.ss-icon-merchant{background:rgba(232,255,71,.12);color:var(--accent)}
+.ss-icon-creator{background:rgba(255,60,95,.12);color:var(--red)}
+.ss-icon-buyer{background:rgba(167,139,250,.12);color:var(--purple)}
+.ss-title{font-family:var(--ff-display);font-size:2rem;letter-spacing:.03em;margin-bottom:.5rem}
+.ss-sub{font-size:.86rem;color:var(--muted2);line-height:1.65;margin-bottom:1.2rem;font-weight:300}
+.ss-ref{font-family:var(--ff-mono);font-size:.7rem;color:var(--muted);background:var(--bg3);padding:.38rem .88rem;border-radius:4px;display:inline-block}
+
+/* ── CART MODAL ── */
+.cart-modal-box{width:100%;max-width:460px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;overflow:hidden;transform:translateY(20px) scale(.97);transition:transform .28s cubic-bezier(.34,1.56,.64,1)}
+.cm-header{padding:1.4rem 1.5rem 0;display:flex;align-items:center;justify-content:space-between}
+.cm-title{font-family:var(--ff-display);font-size:1.7rem;letter-spacing:.03em}
+.cm-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;line-height:1;transition:color .2s}
+.cm-close:hover{color:var(--text)}
+.cm-body{padding:1.2rem 1.5rem 1.5rem}
+.cart-items{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:1.1rem}
+.cart-item{background:var(--bg3);padding:.85rem;display:flex;align-items:center;gap:.9rem}
+.ci-img{width:46px;height:46px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;border-radius:4px}
+.ci-info{flex:1}
+.ci-name{font-size:.84rem;font-weight:500}
+.ci-meta{font-size:.7rem;color:var(--muted2);font-family:var(--ff-mono);margin-top:2px}
+.ci-price{font-family:var(--ff-display);font-size:1.1rem;color:var(--accent)}
+.ci-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.82rem;transition:color .2s}
+.ci-remove:hover{color:var(--red)}
+.cart-empty-state{text-align:center;padding:2.5rem 1rem;color:var(--muted2);font-size:.88rem}
+.cart-empty-icon{font-size:2.2rem;margin-bottom:.75rem}
+.cart-summary{border-top:1px solid var(--border);padding-top:1rem}
+.cart-row{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted2);margin-bottom:5px}
+.cart-total{display:flex;justify-content:space-between;font-size:.98rem;font-weight:500;margin-top:9px;padding-top:9px;border-top:1px solid var(--border)}
+.cart-total-val{font-family:var(--ff-display);font-size:1.5rem;color:var(--accent)}
+
+/* ── CHECKOUT MODAL ── */
+.checkout-steps{display:flex;margin-bottom:1.4rem}
+.cs-step{flex:1;text-align:center;padding:.45rem;border-bottom:2px solid var(--border);font-size:.7rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-family:var(--ff-mono)}
+.cs-step.active{border-bottom-color:var(--accent);color:var(--accent)}
+.cs-step.done{border-bottom-color:var(--muted2);color:var(--muted2)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:1.75rem;right:1.75rem;z-index:300;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:.65rem 1.1rem;font-size:.8rem;color:var(--text);transform:translateY(20px);opacity:0;transition:all .26s;pointer-events:none;max-width:290px;display:flex;align-items:center;gap:8px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeUp .5s ease both}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .hero-right{display:none}
+  .nav-links{display:none}
+}
+@media(max-width:600px){
+  nav{padding:0 1rem}
+  .hero{padding:0 1rem;padding-top:0}
+  section{padding:3.5rem 1rem}
+  .seller-banner{margin:0 1rem 3rem}
+  .hero-stats{gap:1.5rem}
+  .field-row{grid-template-columns:1fr}
+}
+
+/* ── TURNSTILE ── */
+.turnstile-wrap{margin-bottom:.85rem;min-height:65px;display:flex;flex-direction:column;justify-content:center}
+.btn-submit{display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none !important}
+.spinner{width:16px;height:16px;border:2px solid rgba(0,0,0,.2);border-top-color:#080808;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.spinner-light{border-color:rgba(255,255,255,.2);border-top-color:#fff}
+.btn-submit.loading .spinner{display:block}
+.btn-submit.loading .btn-label{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="scrollTo({top:0,behavior:'smooth'})">FLOWMERQ</div>
+  <div class="nav-links">
+    <span class="nav-link" onclick="scrollToId('products')">Shop</span>
+    <span class="nav-link" onclick="scrollToId('videos')">Videos</span>
+    <span class="nav-link" onclick="scrollToId('tiktok-section')">Our Story</span>
+    <span class="nav-link" onclick="scrollToId('sellers')">Sellers</span>
+  </div>
+  <div class="nav-right">
+    <button class="btn-ghost" onclick="openSignup('login')">Sign in</button>
+    <button class="btn-accent" onclick="openSignup('buyer')">Join free</button>
+    <button class="cart-btn" onclick="openCart()">
+      <span>&#128722;</span>
+      <span class="cart-count" id="cartCount">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track">
+    <span class="ticker-item">FREE SHIPPING OVER $50</span><span class="ticker-sep">&#183;</span>
+    <span class="ticker-item">TIKTOK REJECTED YOU? WE WON&#8217;T</span><span class="ticker-sep">&#183;</span>
+    <span class="ticker-item">NEW DROPS EVERY FRIDAY</span><span class="ticker-sep">&#183;</span>
+    <span class="ticker-item">NO AI BANS &#8212; REAL HUMAN SUPPORT</span><span class="ticker-sep">&#183;</span>
+    <span class="ticker-item">WEEKLY CREATOR PAYOUTS VIA STRIPE</span><span class="ticker-sep">&#183;</span>
+    <span class="ticker-item">FIRST 200 SELLERS GET PRO FREE</span><span class="ticker-sep">&#183;</span>
+    <span class="ticker-item">FREE SHIPPING OVER $50</span><span class="ticker-sep">&#183;</span>
+    <span class="ticker-item">TIKTOK REJECTED YOU? WE WON&#8217;T</span><span class="ticker-sep">&#183;</span>
+    <span class="ticker-item">NEW DROPS EVERY FRIDAY</span><span class="ticker-sep">&#183;</span>
+    <span class="ticker-item">NO AI BANS &#8212; REAL HUMAN SUPPORT</span><span class="ticker-sep">&#183;</span>
+    <span class="ticker-item">WEEKLY CREATOR PAYOUTS VIA STRIPE</span><span class="ticker-sep">&#183;</span>
+    <span class="ticker-item">FIRST 200 SELLERS GET PRO FREE</span><span class="ticker-sep">&#183;</span>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-grid"></div>
+  <div class="hero-glow-a"></div>
+  <div class="hero-glow-b"></div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">Next-gen social commerce</div>
+    <h1 class="hero-title">SHOP.<br><span class="hl">WATCH.</span><br>BUY.</h1>
+    <p class="hero-sub">Products meet video. Discover brands through creators, shop in seconds, receive in days.<br><strong>No AI bans. No mystery violations. Just commerce that works.</strong></p>
+    <div class="hero-ctas">
+      <button class="btn-hero-primary" onclick="openSignup('buyer')">Start shopping free</button>
+      <button class="btn-hero-outline" onclick="openSignup('merchant')">Open your store</button>
+      <button class="btn-hero-outline" onclick="openSignup('creator')">Join as creator</button>
+    </div>
+    <div class="hero-stats">
+      <div><span class="stat-val">500+</span><span class="stat-label">Waitlist</span></div>
+      <div><span class="stat-val">40+</span><span class="stat-label">Creator LOIs</span></div>
+      <div><span class="stat-val">$1.3T</span><span class="stat-label">Market size</span></div>
+      <div><span class="stat-val" style="color:var(--accent)">$0</span><span class="stat-label">Paid ads</span></div>
+    </div>
+  </div>
+
+  <div class="hero-right" id="heroRight"></div>
+</section>
+
+<!-- WHY FLOWMERQ -->
+<section class="why-section">
+  <div style="max-width:1200px;margin:0 auto;padding:0">
+    <div class="section-header" style="margin-bottom:2rem">
+      <div><div class="section-eyebrow">Why we exist</div><div class="section-title">BUILT FOR THE REJECTED</div></div>
+    </div>
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="why-icon">&#9989;</div>
+        <div class="why-title">Fair approval for everyone</div>
+        <div class="why-body">Clear criteria, transparent decisions. If you don't qualify we tell you exactly why — and how to get there. No mystery rejections.</div>
+        <span class="why-tag wt-a">No rejection without reason</span>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">&#128100;</div>
+        <div class="why-title">Human moderation only</div>
+        <div class="why-body">Every violation reviewed by a real person. No AI auto-banning your account because an algorithm misread your content.</div>
+        <span class="why-tag wt-r">No AI bans</span>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">&#128172;</div>
+        <div class="why-title">Real appeals process</div>
+        <div class="why-body">Got flagged? You get a 48-hour human response with a clear explanation — not a support ticket that disappears into the void.</div>
+        <span class="why-tag wt-p">48-hour response</span>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">&#128176;</div>
+        <div class="why-title">Weekly payouts, always</div>
+        <div class="why-body">Sellers and creators get paid every week via Stripe Connect. No 90-day holds, no surprise payment pauses. Your money, on time.</div>
+        <span class="why-tag wt-g">Weekly via Stripe</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section id="categories">
+  <div class="section-header">
+    <div><div class="section-eyebrow">Browse by</div><div class="section-title">CATEGORIES</div></div>
+  </div>
+  <div class="cat-grid" id="catGrid"></div>
+</section>
+
+<!-- PRODUCTS -->
+<section id="products">
+  <div class="section-header">
+    <div><div class="section-eyebrow">Trending now</div><div class="section-title">HOT PRODUCTS</div></div>
+    <span class="see-all" onclick="openSignup('buyer')">View all &rarr;</span>
+  </div>
+  <div class="product-grid" id="productGrid"></div>
+</section>
+
+<!-- VIDEO FEED -->
+<section class="video-section" id="videos">
+  <div class="section-header">
+    <div><div class="section-eyebrow">Creator drops</div><div class="section-title">SHOP VIDEOS</div></div>
+    <span class="see-all" onclick="openSignup('creator')">Become a creator &rarr;</span>
+  </div>
+  <div class="video-grid" id="videoGrid"></div>
+</section>
+
+<!-- TIKTOK STORY BANNER -->
+<div class="tiktok-banner" id="tiktok-section">
+  <div class="tb-glow"></div>
+  <div class="tb-content">
+    <div class="tb-eyebrow">Our origin story</div>
+    <div class="tb-title">TikTok Shop said no.<br><span>We built better.</span></div>
+    <div class="tb-body">Flowmerq was born because TikTok Shop kept rejecting creators and merchants — including our founder — without explanation. AI moderation banning accounts overnight. No appeals. No answers. Thousands of people in the same boat with nowhere to go. So we built the platform that says yes.</div>
+    <div class="pain-pills">
+      <span class="pain-pill">Rejected without reason</span>
+      <span class="pain-pill">AI violation bans</span>
+      <span class="pain-pill">No appeals process</span>
+      <span class="pain-pill">Overnight account loss</span>
+    </div>
+    <div class="tb-ctas">
+      <button class="btn-red" onclick="openSignup('creator')">Join as creator &#8594;</button>
+      <button class="btn-hero-outline" onclick="openSignup('merchant')">Open your store &#8594;</button>
+    </div>
+  </div>
+  <div class="tb-stats">
+    <div class="tb-stat"><span class="tb-stat-val">500K+</span><span class="tb-stat-label">Creators rejected by TikTok Shop</span></div>
+    <div class="tb-stat"><span class="tb-stat-val">200K+</span><span class="tb-stat-label">Merchants with violations</span></div>
+    <div class="tb-stat"><span class="tb-stat-val">$20B</span><span class="tb-stat-label">TikTok Shop GMV — with all these problems</span></div>
+  </div>
+</div>
+
+<!-- SOCIAL PROOF -->
+<div class="proof-section">
+  <div style="text-align:center">
+    <div class="section-eyebrow" style="justify-content:center;display:flex">Live signups</div>
+    <div class="section-title" style="text-align:center;margin-top:.4rem">GROWING EVERY DAY</div>
+  </div>
+  <div class="proof-grid">
+    <div class="proof-item"><span class="proof-val" id="proofM" style="color:var(--accent)">0</span><span class="proof-desc">Merchants</span></div>
+    <div class="proof-item"><span class="proof-val" id="proofC" style="color:var(--red)">0</span><span class="proof-desc">Creators</span></div>
+    <div class="proof-item"><span class="proof-val" id="proofB" style="color:var(--purple)">0</span><span class="proof-desc">Buyers</span></div>
+    <div class="proof-item"><span class="proof-val" id="proofT" style="color:var(--muted2)">0</span><span class="proof-desc">Total signed up</span></div>
+  </div>
+</div>
+
+<!-- SELLER BANNER -->
+<div class="seller-banner" id="sellers">
+  <div>
+    <div class="sb-eyebrow">For creators &amp; brands</div>
+    <div class="sb-title">START SELLING<br>ON <span>FLOWMERQ</span></div>
+    <div class="sb-sub">List products, go live, tag items in your videos. Ship from your own warehouse or dropship directly from your supplier. Reach buyers who discover through creators. Payouts every week via Stripe. No AI bans. Ever.</div>
+  </div>
+  <div class="sb-ctas">
+    <button class="btn-hero-primary" onclick="openSignup('merchant')">Open your store</button>
+    <button class="btn-hero-outline" onclick="openSignup('creator')">Join as creator</button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">FLOWMERQ</div>
+  <div class="footer-links">
+    <span class="footer-link">About</span>
+    <span class="footer-link">Sellers</span>
+    <span class="footer-link">Creators</span>
+    <span class="footer-link">Affiliates</span>
+    <span class="footer-link">Privacy</span>
+    <span class="footer-link">Terms</span>
+  </div>
+  <div class="footer-copy">&copy; 2026 Flowmerq Inc. &middot; flowmerq.com</div>
+</footer>
+
+<!-- SIGNUP MODAL -->
+<div class="modal-overlay" id="signupModal" onclick="overlayClick(event,'signupModal')">
+  <div class="signup-modal modal-box" id="signupBox">
+    <div class="sm-header">
+      <button class="sm-close" onclick="closeModal('signupModal')">&times;</button>
+      <div class="sm-eyebrow" id="smEyebrow">Join Flowmerq</div>
+      <div class="sm-title" id="smTitle">CREATE YOUR ACCOUNT</div>
+      <div class="sm-sub" id="smSub">Pick your role and get early access.</div>
+      <div class="role-tabs">
+        <button class="rtab active-merchant" id="rtab-merchant" onclick="switchRole('merchant')">Merchant</button>
+        <button class="rtab" id="rtab-creator" onclick="switchRole('creator')">Creator</button>
+        <button class="rtab" id="rtab-buyer" onclick="switchRole('buyer')">Buyer</button>
+      </div>
+    </div>
+
+    <!-- MERCHANT FORM -->
+    <div class="sm-body form-merchant" id="form-merchant">
+      <div class="field-row">
+        <div class="fgroup"><label class="flabel">First name</label><input class="finput" id="m-fname" placeholder="Jane"></div>
+        <div class="fgroup"><label class="flabel">Last name</label><input class="finput" id="m-lname" placeholder="Smith"></div>
+      </div>
+      <div class="field-row single"><div class="fgroup"><label class="flabel">Business / brand name</label><input class="finput" id="m-brand" placeholder="Your store name"></div></div>
+      <div class="field-row">
+        <div class="fgroup"><label class="flabel">Email</label><input class="finput" id="m-email" type="email" placeholder="you@brand.com"></div>
+        <div class="fgroup"><label class="flabel">Phone (optional)</label><input class="finput" id="m-phone" type="tel" placeholder="+1 555 000 0000"></div>
+      </div>
+      <div class="field-row">
+        <div class="fgroup"><label class="flabel">Product category</label><select class="fselect" id="m-cat"><option value="">Select...</option><option>Fashion & Apparel</option><option>Tech & Electronics</option><option>Beauty & Skincare</option><option>Home & Living</option><option>Sports & Fitness</option><option>Food & Beverage</option><option>Other</option></select></div>
+        <div class="fgroup"><label class="flabel">Monthly revenue</label><select class="fselect" id="m-rev"><option value="">Select...</option><option>Pre-revenue</option><option>Under $5K/mo</option><option>$5K – $25K/mo</option><option>$25K – $100K/mo</option><option>$100K+/mo</option></select></div>
+      </div>
+      <div class="field-row single"><div class="fgroup"><label class="flabel">Currently selling on</label><select class="fselect" id="m-platform"><option value="">Select...</option><option>Amazon</option><option>TikTok Shop</option><option>Shopify</option><option>Etsy</option><option>Instagram / DMs</option><option>Not selling yet</option><option>Multiple platforms</option></select></div></div>
+      <div class="field-row single"><div class="fgroup"><label class="flabel">How will you fulfill orders?</label><select class="fselect" id="m-fulfill"><option value="">Select your model...</option><option>Ship from my own warehouse</option><option>Dropship via supplier (AliExpress, Zendrop, etc.)</option><option>Print-on-demand (Printful, Printify, etc.)</option><option>Combination of methods</option><option>Not sure yet</option></select></div></div>
+      <div class="field-row single"><div class="fgroup"><label class="flabel">Had issues with TikTok Shop?</label><select class="fselect" id="m-tts"><option value="">Select...</option><option>Yes — rejected</option><option>Yes — violations / bans</option><option>Both</option><option>No TikTok Shop experience</option></select></div></div>
+      <span class="ch-label">Preferred contact</span>
+      <div class="ch-group" id="mch"><span class="ch-pill ch-on-merchant" data-v="Email" onclick="toggleCh(this,'merchant')">Email</span><span class="ch-pill" data-v="SMS" onclick="toggleCh(this,'merchant')">SMS</span></div>
+      <div class="consent-row"><div class="cbox" id="mc" onclick="toggleConsent('merchant')"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#080808" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="consent-text">I agree to receive updates from Flowmerq about early access, merchant onboarding, and platform news. Unsubscribe anytime.</span></div>
+      <div class="turnstile-wrap"><div id="ts-merchant" class="cf-turnstile" data-sitekey="0x4AAAAAACrBiF2sXm7Lgfeu" data-theme="dark"></div></div>
+      <button class="btn-submit sub-merchant" id="btn-merchant" onclick="submitForm('merchant')"><span class="btn-label">Reserve my merchant spot &#8594;</span><div class="spinner"></div></button>
+    </div>
+    <div class="sm-success" id="succ-merchant"><div class="ss-icon ss-icon-merchant">&#10003;</div><div class="ss-title">You&#8217;re on the list!</div><div class="ss-sub">We&#8217;ll reach out when merchant onboarding opens. Early merchants get Pro free and first-pick featured placements.</div><div class="ss-ref" id="ref-merchant"></div></div>
+
+    <!-- CREATOR FORM -->
+    <div class="sm-body form-creator" id="form-creator" style="display:none">
+      <div class="field-row">
+        <div class="fgroup"><label class="flabel">First name</label><input class="finput" id="c-fname" placeholder="Alex"></div>
+        <div class="fgroup"><label class="flabel">Last name</label><input class="finput" id="c-lname" placeholder="Jordan"></div>
+      </div>
+      <div class="field-row">
+        <div class="fgroup"><label class="flabel">Email</label><input class="finput" id="c-email" type="email" placeholder="you@email.com"></div>
+        <div class="fgroup"><label class="flabel">Phone (optional)</label><input class="finput" id="c-phone" type="tel" placeholder="+1 555 000 0000"></div>
+      </div>
+      <div class="field-row">
+        <div class="fgroup"><label class="flabel">TikTok handle</label><input class="finput" id="c-tiktok" placeholder="@yourhandle"></div>
+        <div class="fgroup"><label class="flabel">Instagram handle</label><input class="finput" id="c-insta" placeholder="@yourhandle"></div>
+      </div>
+      <div class="field-row">
+        <div class="fgroup"><label class="flabel">Total following</label><select class="fselect" id="c-following"><option value="">Select...</option><option>Under 1K</option><option>1K – 10K</option><option>10K – 50K</option><option>50K – 250K</option><option>250K – 1M</option><option>1M+</option></select></div>
+        <div class="fgroup"><label class="flabel">Content niche</label><select class="fselect" id="c-niche"><option value="">Select...</option><option>Fashion / Style</option><option>Beauty / Skincare</option><option>Tech / Gadgets</option><option>Fitness / Wellness</option><option>Food / Cooking</option><option>Lifestyle / General</option><option>Other</option></select></div>
+      </div>
+      <div class="field-row single"><div class="fgroup"><label class="flabel">Had issues with TikTok Shop?</label><select class="fselect" id="c-tts"><option value="">Select...</option><option>Yes — never approved</option><option>Yes — violations / banned</option><option>Both</option><option>No TikTok Shop experience</option></select></div></div>
+      <span class="ch-label">Preferred contact</span>
+      <div class="ch-group" id="cch"><span class="ch-pill ch-on-creator" data-v="Email" onclick="toggleCh(this,'creator')">Email</span><span class="ch-pill" data-v="SMS" onclick="toggleCh(this,'creator')">SMS</span></div>
+      <div class="consent-row"><div class="cbox" id="cc" onclick="toggleConsent('creator')"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="consent-text">I agree to receive updates from Flowmerq about creator opportunities, affiliate access, and platform launches.</span></div>
+      <div class="turnstile-wrap"><div id="ts-creator" class="cf-turnstile" data-sitekey="0x4AAAAAACrBiF2sXm7Lgfeu" data-theme="dark"></div></div>
+      <button class="btn-submit sub-creator" id="btn-creator" onclick="submitForm('creator')"><span class="btn-label">Join the creator program &#8594;</span><div class="spinner spinner-light"></div></button>
+    </div>
+    <div class="sm-success" id="succ-creator" style="display:none"><div class="ss-icon ss-icon-creator">&#10003;</div><div class="ss-title">Welcome, creator!</div><div class="ss-sub">You&#8217;re in. We&#8217;ll contact you when affiliate access opens. Early creators get boosted feed placement and first access to brand campaigns.</div><div class="ss-ref" id="ref-creator"></div></div>
+
+    <!-- BUYER FORM -->
+    <div class="sm-body form-buyer" id="form-buyer" style="display:none">
+      <div class="field-row">
+        <div class="fgroup"><label class="flabel">First name</label><input class="finput" id="b-fname" placeholder="Sam"></div>
+        <div class="fgroup"><label class="flabel">Last name</label><input class="finput" id="b-lname" placeholder="Rivera"></div>
+      </div>
+      <div class="field-row">
+        <div class="fgroup"><label class="flabel">Email</label><input class="finput" id="b-email" type="email" placeholder="you@email.com"></div>
+        <div class="fgroup"><label class="flabel">Phone (optional)</label><input class="finput" id="b-phone" type="tel" placeholder="+1 555 000 0000"></div>
+      </div>
+      <div class="field-row">
+        <div class="fgroup"><label class="flabel">Age range</label><select class="fselect" id="b-age"><option value="">Select...</option><option>Under 18</option><option>18 – 24</option><option>25 – 34</option><option>35 – 44</option><option>45+</option></select></div>
+        <div class="fgroup"><label class="flabel">Monthly online spend</label><select class="fselect" id="b-spend"><option value="">Select...</option><option>Under $50</option><option>$50 – $200</option><option>$200 – $500</option><option>$500+</option></select></div>
+      </div>
+      <div class="field-row single"><div class="fgroup"><label class="flabel">Shopping interests</label><select class="fselect" id="b-int"><option value="">Select...</option><option>Fashion & Style</option><option>Beauty & Skincare</option><option>Tech & Gadgets</option><option>Home & Decor</option><option>Fitness & Wellness</option><option>A bit of everything</option></select></div></div>
+      <div class="field-row single"><div class="fgroup"><label class="flabel">How do you discover products?</label><select class="fselect" id="b-disc"><option value="">Select...</option><option>TikTok / Reels</option><option>Instagram</option><option>Amazon browse</option><option>Friends / word of mouth</option><option>YouTube</option></select></div></div>
+      <span class="ch-label">How should we notify you?</span>
+      <div class="ch-group" id="bch"><span class="ch-pill ch-on-buyer" data-v="Email" onclick="toggleCh(this,'buyer')">Email</span><span class="ch-pill" data-v="SMS" onclick="toggleCh(this,'buyer')">SMS</span></div>
+      <div class="consent-row"><div class="cbox" id="bc" onclick="toggleConsent('buyer')"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="consent-text">I agree to receive launch updates, exclusive early-access deals, and Flowmerq news. Unsubscribe anytime.</span></div>
+      <div class="turnstile-wrap"><div id="ts-buyer" class="cf-turnstile" data-sitekey="0x4AAAAAACrBiF2sXm7Lgfeu" data-theme="dark"></div></div>
+      <button class="btn-submit sub-buyer" id="btn-buyer" onclick="submitForm('buyer')"><span class="btn-label">Get early access &#8594;</span><div class="spinner spinner-light"></div></button>
+    </div>
+    <div class="sm-success" id="succ-buyer" style="display:none"><div class="ss-icon ss-icon-buyer">&#10003;</div><div class="ss-title">You&#8217;re on the list!</div><div class="ss-sub">We&#8217;ll let you know the moment Flowmerq goes live. Expect exclusive early-access deals and first looks at new drops.</div><div class="ss-ref" id="ref-buyer"></div></div>
+  </div>
+</div>
+
+<!-- CART MODAL -->
+<div class="modal-overlay" id="cartModal" onclick="overlayClick(event,'cartModal')">
+  <div class="cart-modal-box modal-box">
+    <div class="cm-header">
+      <div class="cm-title">YOUR CART</div>
+      <button class="cm-close" onclick="closeModal('cartModal')">&times;</button>
+    </div>
+    <div class="cm-body">
+      <div id="cartBody"></div>
+      <div id="cartSummaryWrap" style="display:none">
+        <div class="cart-summary">
+          <div class="cart-row"><span>Subtotal</span><span id="cartSub">$0.00</span></div>
+          <div class="cart-row"><span>Shipping</span><span style="color:var(--green)">Free</span></div>
+          <div class="cart-total"><span>Total</span><span class="cart-total-val" id="cartTot">$0.00</span></div>
+        </div>
+        <button class="btn-submit sub-merchant" style="margin-top:1rem" onclick="openCheckout()">Checkout &#8594;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="checkoutModal" onclick="overlayClick(event,'checkoutModal')">
+  <div class="cart-modal-box modal-box">
+    <div class="cm-header">
+      <div class="cm-title">CHECKOUT</div>
+      <button class="cm-close" onclick="closeModal('checkoutModal')">&times;</button>
+    </div>
+    <div class="cm-body">
+      <div class="checkout-steps">
+        <div class="cs-step active" id="cs1">Shipping</div>
+        <div class="cs-step" id="cs2">Payment</div>
+        <div class="cs-step" id="cs3">Confirm</div>
+      </div>
+      <div id="co1">
+        <div class="field-row single"><div class="fgroup"><label class="flabel">Full name</label><input class="finput" placeholder="John Smith"></div></div>
+        <div class="field-row single"><div class="fgroup"><label class="flabel">Address</label><input class="finput" placeholder="123 Main St"></div></div>
+        <div class="field-row">
+          <div class="fgroup"><label class="flabel">City</label><input class="finput" placeholder="New York"></div>
+          <div class="fgroup"><label class="flabel">ZIP</label><input class="finput" placeholder="10001"></div>
+        </div>
+        <button class="btn-submit sub-merchant" onclick="nextCo(2)">Continue to payment &#8594;</button>
+      </div>
+      <div id="co2" style="display:none">
+        <div class="field-row single"><div class="fgroup"><label class="flabel">Card number</label><input class="finput" placeholder="4242 4242 4242 4242" maxlength="19"></div></div>
+        <div class="field-row">
+          <div class="fgroup"><label class="flabel">Expiry</label><input class="finput" placeholder="MM/YY" maxlength="5"></div>
+          <div class="fgroup"><label class="flabel">CVC</label><input class="finput" placeholder="123" maxlength="3"></div>
+        </div>
+        <div style="font-size:.7rem;color:var(--muted);margin-bottom:1rem;font-family:var(--ff-mono)">&#128274; Secured by Stripe. We never store your card.</div>
+        <button class="btn-submit sub-merchant" onclick="nextCo(3)">Review order &#8594;</button>
+      </div>
+      <div id="co3" style="display:none;text-align:center;padding:2rem 0">
+        <div style="font-size:2.8rem;margin-bottom:.8rem">&#9989;</div>
+        <div style="font-family:var(--ff-display);font-size:2rem;color:var(--accent);margin-bottom:.5rem">ORDER PLACED!</div>
+        <div style="font-size:.84rem;color:var(--muted2);line-height:1.65">Your order is confirmed.<br>Tracking info will be emailed shortly.</div>
+        <button class="btn-submit sub-merchant" style="margin-top:1.5rem;max-width:180px;margin-left:auto;margin-right:auto;display:block" onclick="finishOrder()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-dot" id="toastDot"></span>
+  <span id="toastMsg">Added to cart</span>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// STEP 1: Paste your Supabase Project URL
+const SUPABASE_URL = 'https://gwzwsotyecwsthxodqyl.supabase.co';
+// STEP 2: Paste your Supabase anon public key
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3endzb3R5ZWN3c3RoeG9kcXlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1Mzc4ODIsImV4cCI6MjA4OTExMzg4Mn0.5SlrjkP05XoTZ61DQzLnExRO2N92wFAP_mjHLun2GP8';
+// STEP 3: Replace YOUR_TURNSTILE_SITE_KEY in the 3 data-sitekey attributes in the HTML above
+// ════════════════════════════════════════════
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const COUNTS_KEY = 'fmq_counts';
+
+let counts = JSON.parse(localStorage.getItem(COUNTS_KEY)||'{"merchant":0,"creator":0,"buyer":0}');
+let consent = {merchant:false,creator:false,buyer:false};
+let channels = {merchant:['Email'],creator:['Email'],buyer:['Email']};
+let cart = [];
+let activeRole = 'merchant';
+
+const products = [
+  {id:1,name:'Pro Wireless Earbuds',cat:'Tech',price:89,oldPrice:129,emoji:'&#127911;',badge:'hot',rating:'4.8',reviews:2140},
+  {id:2,name:'Minimal Leather Wallet',cat:'Fashion',price:45,oldPrice:null,emoji:'&#128178;',badge:'new',rating:'4.9',reviews:830},
+  {id:3,name:'Glow Serum Kit',cat:'Beauty',price:62,oldPrice:85,emoji:'&#10024;',badge:'sale',rating:'4.7',reviews:3200},
+  {id:4,name:'Ceramic Pour-Over Set',cat:'Home',price:38,oldPrice:null,emoji:'&#9749;',badge:'new',rating:'4.6',reviews:560},
+  {id:5,name:'Resistance Band Set',cat:'Sports',price:29,oldPrice:45,emoji:'&#128170;',badge:'hot',rating:'4.8',reviews:1900},
+  {id:6,name:'Portable Ring Light',cat:'Tech',price:34,oldPrice:null,emoji:'&#128161;',badge:null,rating:'4.5',reviews:740},
+  {id:7,name:'Oversized Hoodie',cat:'Fashion',price:58,oldPrice:75,emoji:'&#128085;',badge:'hot',rating:'4.9',reviews:4100},
+  {id:8,name:'Matcha Starter Kit',cat:'Food',price:24,oldPrice:null,emoji:'&#127808;',badge:'new',rating:'4.7',reviews:1200},
+];
+
+const videos = [
+  {emoji:'&#127916;',seller:'@techdrops',product:'Wireless Earbuds',price:'$89',live:true},
+  {emoji:'&#127808;',seller:'@matcha.life',product:'Matcha Kit',price:'$24',live:false},
+  {emoji:'&#128085;',seller:'@streetwear',product:'Oversized Hoodie',price:'$58',live:false},
+  {emoji:'&#10024;',seller:'@glowup',product:'Glow Serum',price:'$62',live:true},
+  {emoji:'&#127911;',seller:'@beatmaker',product:'Ring Light',price:'$34',live:false},
+  {emoji:'&#128170;',seller:'@fitcheck',product:'Bands Set',price:'$29',live:false},
+];
+
+const categories = [
+  {icon:'&#128248;',name:'Tech',count:'12,400'},
+  {icon:'&#128083;',name:'Fashion',count:'38,200'},
+  {icon:'&#127774;',name:'Beauty',count:'9,800'},
+  {icon:'&#127968;',name:'Home',count:'22,100'},
+  {icon:'&#127947;',name:'Sports',count:'7,300'},
+  {icon:'&#127829;',name:'Food',count:'4,100'},
+  {icon:'&#128220;',name:'Books',count:'18,900'},
+  {icon:'&#127926;',name:'Music',count:'3,600'},
+];
+
+function render() {
+  document.getElementById('catGrid').innerHTML = categories.map(c=>`
+    <div class="cat-card" onclick="openSignup('buyer')">
+      <div class="cat-icon">${c.icon}</div>
+      <div class="cat-name">${c.name}</div>
+      <div class="cat-count">${c.count} items</div>
+    </div>`).join('');
+
+  document.getElementById('productGrid').innerHTML = products.map(p=>`
+    <div class="pcard">
+      <div class="pcard-img"><div class="pcard-img-inner">${p.emoji}</div>
+        ${p.badge?`<div class="pcard-badge badge-${p.badge}">${p.badge}</div>`:''}
+      </div>
+      <div class="pcard-body">
+        <div class="pcard-cat">${p.cat}</div>
+        <div class="pcard-name">${p.name}</div>
+        <div class="pcard-footer">
+          <div><span class="pcard-price">$${p.price}</span>${p.oldPrice?`<span class="pcard-price-old">$${p.oldPrice}</span>`:''}</div>
+          <div class="pcard-rating">&#9733; ${p.rating} <span style="color:var(--muted)">(${p.reviews.toLocaleString()})</span></div>
+        </div>
+      </div>
+      <div class="pcard-actions">
+        <button class="btn-add" onclick="addToCart(${p.id})">Add to cart</button>
+        <button class="btn-wish">&#9825;</button>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('videoGrid').innerHTML = videos.map(v=>`
+    <div class="vcard">
+      <div class="vcard-thumb">${v.emoji}</div>
+      ${v.live?'<div class="vcard-live">LIVE</div>':''}
+      <div class="vcard-play">&#9654;</div>
+      <div class="vcard-overlay">
+        <div class="vcard-seller">${v.seller}</div>
+        <div class="vcard-product">${v.product}</div>
+        <div class="vcard-price">${v.price}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('heroRight').innerHTML = products.slice(0,4).map(p=>`
+    <div class="hero-product-preview">
+      <div class="hpp-img">${p.emoji}</div>
+      <div>
+        <div class="hpp-name">${p.name}</div>
+        <div class="hpp-meta">${p.cat} &middot; &#9733; ${p.rating}</div>
+      </div>
+      <span class="hpp-price">$${p.price}</span>
+    </div>`).join('');
+
+  updateCounts();
+}
+
+function updateCounts() {
+  const total = counts.merchant + counts.creator + counts.buyer;
+  document.getElementById('proofM').textContent = counts.merchant;
+  document.getElementById('proofC').textContent = counts.creator;
+  document.getElementById('proofB').textContent = counts.buyer;
+  document.getElementById('proofT').textContent = total;
+}
+
+function updateCartCount() {
+  document.getElementById('cartCount').textContent = cart.reduce((s,x)=>s+x.qty,0);
+}
+
+function addToCart(id) {
+  const p = products.find(x=>x.id===id);
+  const ex = cart.find(x=>x.id===id);
+  if(ex) ex.qty++; else cart.push({...p,qty:1});
+  updateCartCount();
+  toast(`${p.name} added to cart`,'var(--accent)');
+}
+
+function openCart() {
+  const body = document.getElementById('cartBody');
+  const sumWrap = document.getElementById('cartSummaryWrap');
+  if(!cart.length) {
+    body.innerHTML=`<div class="cart-empty-state"><div class="cart-empty-icon">&#128722;</div>Your cart is empty.<br><span style="font-size:.78rem;color:var(--muted)">Browse products to get started.</span></div>`;
+    sumWrap.style.display='none';
+  } else {
+    const total = cart.reduce((s,x)=>s+x.price*x.qty,0);
+    body.innerHTML=`<div class="cart-items">${cart.map(x=>`
+      <div class="cart-item">
+        <div class="ci-img">${x.emoji}</div>
+        <div class="ci-info"><div class="ci-name">${x.name}</div><div class="ci-meta">Qty: ${x.qty} &middot; ${x.cat}</div></div>
+        <div class="ci-price">$${(x.price*x.qty).toFixed(2)}</div>
+        <button class="ci-remove" onclick="removeFromCart(${x.id})">&#10005;</button>
+      </div>`).join('')}</div>`;
+    document.getElementById('cartSub').textContent=`$${total.toFixed(2)}`;
+    document.getElementById('cartTot').textContent=`$${total.toFixed(2)}`;
+    sumWrap.style.display='block';
+  }
+  openModal('cartModal');
+}
+
+function removeFromCart(id) {
+  cart=cart.filter(x=>x.id!==id);
+  updateCartCount();
+  openCart();
+  closeModal('cartModal');
+  setTimeout(()=>openCart(),10);
+}
+
+function openCheckout() {
+  closeModal('cartModal');
+  nextCo(1);
+  openModal('checkoutModal');
+}
+
+function nextCo(n) {
+  [1,2,3].forEach(i=>{
+    document.getElementById(`co${i}`).style.display=i===n?'block':'none';
+    const s=document.getElementById(`cs${i}`);
+    s.className='cs-step'+(i===n?' active':i<n?' done':'');
+  });
+}
+
+function finishOrder() {
+  cart=[];
+  updateCartCount();
+  closeModal('checkoutModal');
+  toast('Order confirmed! Tracking info incoming.','var(--green)');
+}
+
+function openSignup(role) {
+  switchRole(role);
+  openModal('signupModal');
+}
+
+function switchRole(role) {
+  activeRole = role;
+  ['merchant','creator','buyer'].forEach(r=>{
+    const fb = document.getElementById(`form-${r}`);
+    const sb = document.getElementById(`succ-${r}`);
+    if(fb) { fb.style.display = r===role?'block':'none'; }
+    if(sb) { sb.style.display = 'none'; }
+    const tab = document.getElementById(`rtab-${r}`);
+    if(tab) tab.className = 'rtab' + (r===role?` active-${r}`:'');
+  });
+  const titles = {merchant:['For sellers & brands','OPEN YOUR STORE','First 200 merchants get Pro free.'],
+    creator:['For creators & affiliates','JOIN AS A CREATOR','Tag products, go live, get paid weekly.'],
+    buyer:['For shoppers','GET EARLY ACCESS','Discover products through video. Shop in one tap.']};
+  const t = titles[role];
+  document.getElementById('smEyebrow').textContent = t[0];
+  document.getElementById('smTitle').textContent = t[1];
+  document.getElementById('smSub').textContent = t[2];
+}
+
+function toggleCh(el, role) {
+  const v = el.dataset.v;
+  const isOn = el.classList.contains(`ch-on-${role}`);
+  el.classList.toggle(`ch-on-${role}`, !isOn);
+  if(!isOn) { if(!channels[role].includes(v)) channels[role].push(v); }
+  else { channels[role]=channels[role].filter(c=>c!==v); }
+}
+
+function toggleConsent(role) {
+  consent[role]=!consent[role];
+  const box=document.getElementById(role[0]+'c');
+  box.className='cbox'+(consent[role]?` on-${role}`:'');
+}
+
+function g(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
+
+async function submitForm(type){
+  const emailMap={merchant:'m-email',creator:'c-email',buyer:'b-email'};
+  const fnameMap={merchant:'m-fname',creator:'c-fname',buyer:'b-fname'};
+  const fname = g(fnameMap[type]);
+  const email = g(emailMap[type]);
+  if(!fname||!email){ toast('Please enter your name and email.','var(--red)'); return; }
+  if(!consent[type]){ toast('Please accept communications to continue.','var(--red)'); return; }
+
+  const row={type,first_name:fname,email,ref_code:refCode,channels:channels[type],last_name:g(type==='merchant'?'m-lname':type==='creator'?'c-lname':'b-lname'),phone:g(type==='merchant'?'m-phone':type==='creator'?'c-phone':'b-phone')};
+  if(type==='merchant') Object.assign(row,{brand_name:g('m-brand'),category:g('m-cat'),monthly_revenue:g('m-rev'),current_platform:g('m-platform'),fulfillment_method:g('m-fulfill'),tiktok_issue:g('m-tts')});
+  if(type==='creator') Object.assign(data,{lastName:g('c-lname'),phone:g('c-phone'),tiktok:g('c-tiktok'),instagram:g('c-insta'),following:g('c-following'),niche:g('c-niche'),tiktokIssue:g('c-tts')});
+  if(type==='buyer') Object.assign(row,{age_range:g('b-age'),monthly_spend:g('b-spend'),interests:g('b-int'),discovery_method:g('b-disc')});
+
+  const refCode=type.toUpperCase().slice(0,3)+'-'+Date.now().toString(36).toUpperCase();
+  // Turnstile token check
+  const tsResp=document.querySelector(`#ts-${type} [name="cf-turnstile-response"]`);
+  if(!tsResp||!tsResp.value){toast('Please wait for the security check.','var(--red)');return;}
+
+  const btn=document.getElementById(`btn-${type}`);
+  btn.classList.add('loading');
+  btn.disabled=true;
+
+  try{
+    const {error}=await db.from('leads').insert(row);
+    if(error) throw error;
+
+    counts[type]++;
+    localStorage.setItem(COUNTS_KEY,JSON.stringify(counts));
+    updateCounts();
+
+    document.getElementById(`form-${type}`).style.display='none';
+    const succ=document.getElementById(`succ-${type}`);
+    succ.style.display='block';
+    document.getElementById(`ref-${type}`).textContent='Reference: '+refCode;
+
+    const colors={merchant:'var(--accent)',creator:'var(--red)',buyer:'var(--purple)'};
+    const msgs={merchant:'Merchant spot reserved!',creator:'Creator profile saved!',buyer:"You're on the waitlist!"};
+    toast(msgs[type],colors[type]);
+
+  }catch(err){
+    console.error(err);
+    toast('Something went wrong. Please try again.','var(--red)');
+    btn.classList.remove('loading');
+    btn.disabled=false;
+    if(window.turnstile) turnstile.reset(`#ts-${type}`);
+  }
+}
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function overlayClick(e,id){ if(e.target.id===id) closeModal(id); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') ['signupModal','cartModal','checkoutModal'].forEach(closeModal); });
+
+function scrollToId(id){ const el=document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+
+function toast(msg,color='var(--accent)'){
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  document.getElementById('toastDot').style.background=color;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+render();
+</script>
+</body>
+</html>
