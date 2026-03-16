@@ -930,12 +930,12 @@ async function submitForm(type){
   if(!fname||!email){ toast('Please enter your name and email.','var(--red)'); return; }
   if(!consent[type]){ toast('Please accept communications to continue.','var(--red)'); return; }
 
-  const row={type,first_name:fname,email,ref_code:ref,channels:channels[type],last_name:g(type==='merchant'?'m-lname':type==='creator'?'c-lname':'b-lname'),phone:g(type==='merchant'?'m-phone':type==='creator'?'c-phone':'b-phone')};
+  const row={type,first_name:fname,email,ref_code:refCode,channels:channels[type],last_name:g(type==='merchant'?'m-lname':type==='creator'?'c-lname':'b-lname'),phone:g(type==='merchant'?'m-phone':type==='creator'?'c-phone':'b-phone')};
   if(type==='merchant') Object.assign(row,{brand_name:g('m-brand'),category:g('m-cat'),monthly_revenue:g('m-rev'),current_platform:g('m-platform'),fulfillment_method:g('m-fulfill'),tiktok_issue:g('m-tts')});
   if(type==='creator') Object.assign(data,{lastName:g('c-lname'),phone:g('c-phone'),tiktok:g('c-tiktok'),instagram:g('c-insta'),following:g('c-following'),niche:g('c-niche'),tiktokIssue:g('c-tts')});
   if(type==='buyer') Object.assign(row,{age_range:g('b-age'),monthly_spend:g('b-spend'),interests:g('b-int'),discovery_method:g('b-disc')});
 
-  const ref=type.toUpperCase().slice(0,3)+'-'+Date.now().toString(36).toUpperCase();
+  const refCode=type.toUpperCase().slice(0,3)+'-'+Date.now().toString(36).toUpperCase();
   // Turnstile token check
   const tsResp=document.querySelector(`#ts-${type} [name="cf-turnstile-response"]`);
   if(!tsResp||!tsResp.value){toast('Please wait for the security check.','var(--red)');return;}
@@ -955,7 +955,7 @@ async function submitForm(type){
     document.getElementById(`form-${type}`).style.display='none';
     const succ=document.getElementById(`succ-${type}`);
     succ.style.display='block';
-    document.getElementById(`ref-${type}`).textContent='Reference: '+ref;
+    document.getElementById(`ref-${type}`).textContent='Reference: '+refCode;
 
     const colors={merchant:'var(--accent)',creator:'var(--red)',buyer:'var(--purple)'};
     const msgs={merchant:'Merchant spot reserved!',creator:'Creator profile saved!',buyer:"You're on the waitlist!"};
