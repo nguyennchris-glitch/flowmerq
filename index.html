@@ -585,7 +585,7 @@ footer{border-top:1px solid var(--border);padding:2.5rem 2rem;display:flex;justi
       <span class="ch-label">Preferred contact</span>
       <div class="ch-group" id="mch"><span class="ch-pill ch-on-merchant" data-v="Email" onclick="toggleCh(this,'merchant')">Email</span><span class="ch-pill" data-v="SMS" onclick="toggleCh(this,'merchant')">SMS</span></div>
       <div class="consent-row"><div class="cbox" id="mc" onclick="toggleConsent('merchant')"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#080808" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="consent-text">I agree to receive updates from Flowmerq about early access, merchant onboarding, and platform news. Unsubscribe anytime.</span></div>
-      <div class="turnstile-wrap"><div id="ts-merchant" class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY" data-theme="dark"></div></div>
+      <div class="turnstile-wrap"><div id="ts-merchant" class="cf-turnstile" data-sitekey="0x4AAAAAACrBiF2sXm7Lgfeu" data-theme="dark"></div></div>
       <button class="btn-submit sub-merchant" id="btn-merchant" onclick="submitForm('merchant')"><span class="btn-label">Reserve my merchant spot &#8594;</span><div class="spinner"></div></button>
     </div>
     <div class="sm-success" id="succ-merchant"><div class="ss-icon ss-icon-merchant">&#10003;</div><div class="ss-title">You&#8217;re on the list!</div><div class="ss-sub">We&#8217;ll reach out when merchant onboarding opens. Early merchants get Pro free and first-pick featured placements.</div><div class="ss-ref" id="ref-merchant"></div></div>
@@ -612,7 +612,7 @@ footer{border-top:1px solid var(--border);padding:2.5rem 2rem;display:flex;justi
       <span class="ch-label">Preferred contact</span>
       <div class="ch-group" id="cch"><span class="ch-pill ch-on-creator" data-v="Email" onclick="toggleCh(this,'creator')">Email</span><span class="ch-pill" data-v="SMS" onclick="toggleCh(this,'creator')">SMS</span></div>
       <div class="consent-row"><div class="cbox" id="cc" onclick="toggleConsent('creator')"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="consent-text">I agree to receive updates from Flowmerq about creator opportunities, affiliate access, and platform launches.</span></div>
-      <div class="turnstile-wrap"><div id="ts-creator" class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY" data-theme="dark"></div></div>
+      <div class="turnstile-wrap"><div id="ts-creator" class="cf-turnstile" data-sitekey="0x4AAAAAACrBiF2sXm7Lgfeu" data-theme="dark"></div></div>
       <button class="btn-submit sub-creator" id="btn-creator" onclick="submitForm('creator')"><span class="btn-label">Join the creator program &#8594;</span><div class="spinner spinner-light"></div></button>
     </div>
     <div class="sm-success" id="succ-creator" style="display:none"><div class="ss-icon ss-icon-creator">&#10003;</div><div class="ss-title">Welcome, creator!</div><div class="ss-sub">You&#8217;re in. We&#8217;ll contact you when affiliate access opens. Early creators get boosted feed placement and first access to brand campaigns.</div><div class="ss-ref" id="ref-creator"></div></div>
@@ -636,7 +636,7 @@ footer{border-top:1px solid var(--border);padding:2.5rem 2rem;display:flex;justi
       <span class="ch-label">How should we notify you?</span>
       <div class="ch-group" id="bch"><span class="ch-pill ch-on-buyer" data-v="Email" onclick="toggleCh(this,'buyer')">Email</span><span class="ch-pill" data-v="SMS" onclick="toggleCh(this,'buyer')">SMS</span></div>
       <div class="consent-row"><div class="cbox" id="bc" onclick="toggleConsent('buyer')"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5L4 7.5L8.5 2.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="consent-text">I agree to receive launch updates, exclusive early-access deals, and Flowmerq news. Unsubscribe anytime.</span></div>
-      <div class="turnstile-wrap"><div id="ts-buyer" class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY" data-theme="dark"></div></div>
+      <div class="turnstile-wrap"><div id="ts-buyer" class="cf-turnstile" data-sitekey="0x4AAAAAACrBiF2sXm7Lgfeu" data-theme="dark"></div></div>
       <button class="btn-submit sub-buyer" id="btn-buyer" onclick="submitForm('buyer')"><span class="btn-label">Get early access &#8594;</span><div class="spinner spinner-light"></div></button>
     </div>
     <div class="sm-success" id="succ-buyer" style="display:none"><div class="ss-icon ss-icon-buyer">&#10003;</div><div class="ss-title">You&#8217;re on the list!</div><div class="ss-sub">We&#8217;ll let you know the moment Flowmerq goes live. Expect exclusive early-access deals and first looks at new drops.</div><div class="ss-ref" id="ref-buyer"></div></div>
@@ -714,9 +714,9 @@ footer{border-top:1px solid var(--border);padding:2.5rem 2rem;display:flex;justi
 <script>
 // ════════════════════════════════════════════
 // STEP 1: Paste your Supabase Project URL
-const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+const SUPABASE_URL = 'https://gwzwsotyecwsthxodqyl.supabase.co';
 // STEP 2: Paste your Supabase anon public key
-const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3endzb3R5ZWN3c3RoeG9kcXlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1Mzc4ODIsImV4cCI6MjA4OTExMzg4Mn0.5SlrjkP05XoTZ61DQzLnExRO2N92wFAP_mjHLun2GP8';
 // STEP 3: Replace YOUR_TURNSTILE_SITE_KEY in the 3 data-sitekey attributes in the HTML above
 // ════════════════════════════════════════════
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
