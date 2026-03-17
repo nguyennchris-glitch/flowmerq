@@ -348,6 +348,9 @@ footer{border-top:1px solid var(--border);padding:2.5rem 2rem;display:flex;justi
   .field-row{grid-template-columns:1fr}
 }
 
+/* ── FIELD ERROR ── */
+.finput.error,.fselect.error{border-color:var(--red) !important;box-shadow:0 0 0 2px rgba(255,60,95,.12) !important}
+
 /* ── TURNSTILE ── */
 .turnstile-wrap{margin-bottom:.85rem;min-height:65px;display:flex;flex-direction:column;justify-content:center}
 .btn-submit{display:flex;align-items:center;justify-content:center;gap:8px}
@@ -575,7 +578,7 @@ footer{border-top:1px solid var(--border);padding:2.5rem 2rem;display:flex;justi
       <div class="field-row single"><div class="fgroup"><label class="flabel">Business / brand name</label><input class="finput" id="m-brand" placeholder="Your store name"></div></div>
       <div class="field-row">
         <div class="fgroup"><label class="flabel">Email</label><input class="finput" id="m-email" type="email" placeholder="you@brand.com"></div>
-        <div class="fgroup"><label class="flabel">Phone (optional)</label><input class="finput" id="m-phone" type="tel" placeholder="+1 555 000 0000"></div>
+        <div class="fgroup"><label class="flabel">Phone</label><input class="finput" id="m-phone" type="tel" placeholder="+1 555 000 0000"></div>
       </div>
       <div class="field-row">
         <div class="fgroup"><label class="flabel">Product category</label><select class="fselect" id="m-cat"><option value="">Select...</option><option>Fashion & Apparel</option><option>Tech & Electronics</option><option>Beauty & Skincare</option><option>Home & Living</option><option>Sports & Fitness</option><option>Food & Beverage</option><option>Other</option></select></div>
@@ -601,7 +604,7 @@ footer{border-top:1px solid var(--border);padding:2.5rem 2rem;display:flex;justi
       </div>
       <div class="field-row">
         <div class="fgroup"><label class="flabel">Email</label><input class="finput" id="c-email" type="email" placeholder="you@email.com"></div>
-        <div class="fgroup"><label class="flabel">Phone (optional)</label><input class="finput" id="c-phone" type="tel" placeholder="+1 555 000 0000"></div>
+        <div class="fgroup"><label class="flabel">Phone</label><input class="finput" id="c-phone" type="tel" placeholder="+1 555 000 0000"></div>
       </div>
       <div class="field-row">
         <div class="fgroup"><label class="flabel">TikTok handle</label><input class="finput" id="c-tiktok" placeholder="@yourhandle"></div>
@@ -629,7 +632,7 @@ footer{border-top:1px solid var(--border);padding:2.5rem 2rem;display:flex;justi
       </div>
       <div class="field-row">
         <div class="fgroup"><label class="flabel">Email</label><input class="finput" id="b-email" type="email" placeholder="you@email.com"></div>
-        <div class="fgroup"><label class="flabel">Phone (optional)</label><input class="finput" id="b-phone" type="tel" placeholder="+1 555 000 0000"></div>
+        <div class="fgroup"><label class="flabel">Phone</label><input class="finput" id="b-phone" type="tel" placeholder="+1 555 000 0000"></div>
       </div>
       <div class="field-row">
         <div class="fgroup"><label class="flabel">Age range</label><select class="fselect" id="b-age"><option value="">Select...</option><option>Under 18</option><option>18 - 24</option><option>25 - 34</option><option>35 - 44</option><option>45+</option></select></div>
@@ -947,13 +950,61 @@ function toggleConsent(role) {
 
 function g(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
 
-async function submitForm(type){
-  const emailMap={merchant:'m-email',creator:'c-email',buyer:'b-email'};
-  const fnameMap={merchant:'m-fname',creator:'c-fname',buyer:'b-fname'};
-  const fname=g(fnameMap[type]);
-  const email=g(emailMap[type]);
+// Clear error highlight when user focuses a field
+document.addEventListener('focus', e => {
+  if(e.target.matches('.finput,.fselect')) e.target.classList.remove('error');
+}, true);
 
-  if(!fname||!email){toast('Please enter your name and email.','var(--red)');return;}
+const REQUIRED = {
+  merchant: [
+    {id:'m-fname',    label:'First name'},
+    {id:'m-lname',    label:'Last name'},
+    {id:'m-brand',    label:'Business / brand name'},
+    {id:'m-email',    label:'Email'},
+    {id:'m-phone',    label:'Phone'},
+    {id:'m-cat',      label:'Product category'},
+    {id:'m-rev',      label:'Monthly revenue'},
+    {id:'m-platform', label:'Currently selling on'},
+    {id:'m-fulfill',  label:'Fulfillment method'},
+    {id:'m-tts',      label:'Platform experience'},
+  ],
+  creator: [
+    {id:'c-fname',     label:'First name'},
+    {id:'c-lname',     label:'Last name'},
+    {id:'c-email',     label:'Email'},
+    {id:'c-phone',     label:'Phone'},
+    {id:'c-tiktok',    label:'TikTok handle'},
+    {id:'c-insta',     label:'Instagram handle'},
+    {id:'c-following', label:'Total following'},
+    {id:'c-niche',     label:'Content niche'},
+    {id:'c-tts',       label:'Platform experience'},
+  ],
+  buyer: [
+    {id:'b-fname', label:'First name'},
+    {id:'b-lname', label:'Last name'},
+    {id:'b-email', label:'Email'},
+    {id:'b-phone', label:'Phone'},
+    {id:'b-age',   label:'Age range'},
+    {id:'b-spend', label:'Monthly online spend'},
+    {id:'b-int',   label:'Shopping interests'},
+    {id:'b-disc',  label:'How you discover products'},
+  ],
+};
+
+async function submitForm(type){
+  // Clear previous errors
+  document.querySelectorAll(`#form-${type} .error`).forEach(el=>el.classList.remove('error'));
+
+  // Validate all required fields
+  const missing = REQUIRED[type].find(f=>!g(f.id));
+  if(missing){
+    const el=document.getElementById(missing.id);
+    el.classList.add('error');
+    el.scrollIntoView({behavior:'smooth',block:'center'});
+    toast(`Please fill in: ${missing.label}`,'var(--red)');
+    return;
+  }
+
   if(!consent[type]){toast('Please accept communications to continue.','var(--red)');return;}
 
   const tsResp=document.querySelector(`#ts-${type} [name="cf-turnstile-response"]`);
@@ -965,14 +1016,19 @@ async function submitForm(type){
 
   const refCode=type.toUpperCase().slice(0,3)+'-'+Date.now().toString(36).toUpperCase();
 
+  const emailId={merchant:'m-email',creator:'c-email',buyer:'b-email'};
+  const fnameId={merchant:'m-fname',creator:'c-fname',buyer:'b-fname'};
+  const lnameId={merchant:'m-lname',creator:'c-lname',buyer:'b-lname'};
+  const phoneId={merchant:'m-phone',creator:'c-phone',buyer:'b-phone'};
+
   const row={
     type,
-    first_name:fname,
-    email,
+    first_name:g(fnameId[type]),
+    email:g(emailId[type]),
     ref_code:refCode,
     channels:channels[type],
-    last_name:g(type==='merchant'?'m-lname':type==='creator'?'c-lname':'b-lname'),
-    phone:g(type==='merchant'?'m-phone':type==='creator'?'c-phone':'b-phone'),
+    last_name:g(lnameId[type]),
+    phone:g(phoneId[type]),
   };
 
   if(type==='merchant') Object.assign(row,{
